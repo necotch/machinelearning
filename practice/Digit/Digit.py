@@ -22,6 +22,7 @@ from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 
 from matplotlib.font_manager import FontProperties
+from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
@@ -41,6 +42,8 @@ ALGORITHM				= PERCEPTRON
 RANDOM_SPLIT			= False
 
 MAX_NUMBER_OF_SAMPLES	= 1500
+
+ENABLE_3D				= False
 
 # Meta
 # X : 特徴量
@@ -73,11 +76,14 @@ def main(args, argc):
 def getOptions(args, argc):
 	global OPTIONS
 	global ALGORITHM
+	global ENABLE_3D
 	for index, arg in enumerate(args):
 		if arg == "-o" or arg == "-O" and index < (argc-1) and '-' not in args[index+1]:
 			OPTIONS = args[index+1].split(',')
 		elif arg == '-a' or arg == '-A' and index < (argc-1) and '-' not in args[index+1]:
 			ALGORITHM = int(args[index+1])
+		elif arg == '--3D' or arg == '--3d':
+			ENABLE_3D = True
 
 def sample():
 	digits = datasets.load_digits(10)
@@ -92,14 +98,44 @@ def sample():
 
 def distribution(type):
 
+	color_list = ['teal', 'green', 'lime', 'aqua', 'yellow', 'red', 'fuchsia', 'olive', 'purple', 'maroon']
+
 	digits = datasets.load_digits(10)
 
-	if type == 1:
-		X_reduced = TSNE(n_components=2, random_state=0).fit_transform(digits.data)
+	number_of_sampling = len(digits.data)
+	data    = digits.data[:number_of_sampling]
+	targets = digits.target[:number_of_sampling]
+
+	if ENABLE_3D == True:
+		dimension = 3
 	else:
-		X_reduced = PCA(n_components=2).fit_transform(digits.data)
-	plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=digits.target)
-	plt.colorbar()
+		dimension = 2
+
+	if type == 1:
+		X_reduced = TSNE(n_components=dimension, random_state=0).fit_transform(data)
+	else:
+		X_reduced = PCA(n_components=dimension).fit_transform(data)
+
+#	print('X_redueced:{a}'.format(a=X_reduced),flush=True)
+
+	if ENABLE_3D == True:
+		fig = plt.figure()
+		ax = Axes3D(fig)
+
+		elem1_elem2_elem3_target = list(zip(X_reduced[:, 0], X_reduced[:, 1], X_reduced[:, 2],targets[:]))
+		for index, (elem1, elem2, elem3, target) in enumerate(elem1_elem2_elem3_target):
+#			ax.scatter3D(int(elem1), int(elem2), int(elem3), marker='$'+str(target)+'$', c=color_list[target])
+			ax.scatter3D(int(elem1), int(elem2), int(elem3), marker='o', c=color_list[target])
+		ax.set_xlabel('x')
+		ax.set_ylabel('y')
+		ax.set_zlabel('z')
+	else:
+		elem1_elem2_target = list(zip(X_reduced[:, 0], X_reduced[:, 1],targets[:]))
+		for index, (elem1, elem2, target) in enumerate(elem1_elem2_target):
+			plt.scatter(elem1, elem2, marker='$'+str(target)+'$', c=color_list[target])
+
+#	plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=targets)
+
 	plt.show()
 
 def Preparation():
